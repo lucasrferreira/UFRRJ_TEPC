@@ -1,21 +1,38 @@
 #include "stdafx.h"
-// #include <vector>
+#include <vector>
+#include <list>
 #include <map>
 
 using namespace std;
 
-int BFS(map<int, int*> NodeEdgeMap, int root, int goal) {
+bool IsIn(vector<int> List, int outNId){
 
-  // we can traverse the edges also like this
-  TVec<int> Checked;    
-  TVec<int> Queue;
+  int size = List.size();
+  // printf("In thread %d --- %d\n", omp_get_thread_num(), size);
+  for(int i = 0 ; i < size ; i++){
+    if(List[i] == outNId){
+      return true;
+    }
+  }
+  return false;
+}
 
-  Queue.Add(root);
-  while(!Queue.Empty())
+int BFS(map<int, int*> NodeEdgeMap, int root, int goal, int* nodes, int nodesCount ){  
+  map<int, bool> CheckedNodes;
+  
+  for(int i = 0; i < nodesCount; i++){
+    CheckedNodes.insert(make_pair(nodes[i], false));
+  }
+
+  // vector<int> Checked;
+  list<int> Queue;
+
+  Queue.push_back(root);
+  while(Queue.size() > 0)
   {
-    int currentId = Queue[0];
-
-    Queue.Del(0);
+    int currentId = Queue.front();
+    
+    Queue.pop_front();
     if(currentId == goal){
       return goal;
     }
@@ -23,11 +40,16 @@ int BFS(map<int, int*> NodeEdgeMap, int root, int goal) {
     int childsCount = childs[0];
     for (int e = 1; e < childsCount + 1; e++) {
       int outNId = childs[e];
-      if(!Checked.IsIn(outNId)){
-        Checked.Add(outNId);
-        Queue.Add(outNId);
+      // bool isin = IsIn(Checked,outNId);
+      bool isin = CheckedNodes[outNId];
+      if(!isin){
+        // Checked.push_back(outNId);
+        CheckedNodes[outNId] = true;
+        Queue.push_back(outNId);
       }
     }
+    // printf("- Node: %d - childsCount: %d - Queue Size: %d\n", currentId, childsCount, Queue.size());
+    
   }
 
   return -1;
@@ -80,14 +102,14 @@ int main(int argc, char* argv[])
   srand (545612); // Seed the Random
 
   printf("Graph (%d, %d)\n", nodesCount, edgesCount);
-  for (int e = 0; e < 10; e++) {
+  for (int e = 0; e < 100; e++) {
     const int NId1 = nodes[rand() % nodesCount];
     const int NId2 = nodes[rand() % nodesCount];
     printf("Search Path %d -- %d\n", NId1,  NId2); 
     TExeTm ExeBfsTm;
-    // printf("run time: %s (%s)\n", ExeBfsTm.GetTmStr(), TSecTm::GetCurTm().GetTmStr().CStr()); 
-    int val = BFS(NodeEdgeMap, NId1,NId2);
-    // printf("run time: %s (%s)\n", ExeBfsTm.GetTmStr(), TSecTm::GetCurTm().GetTmStr().CStr()); 
+    printf("run time: %s (%s)\n", ExeBfsTm.GetTmStr(), TSecTm::GetCurTm().GetTmStr().CStr()); 
+    int val = BFS(NodeEdgeMap, NId1,NId2, nodes, nodesCount);
+    printf("run time: %s (%s)\n", ExeBfsTm.GetTmStr(), TSecTm::GetCurTm().GetTmStr().CStr()); 
     if(val == -1){
       printf("Not Found Path %d -- %d\n\n", NId1,  NId2); 
     }else{
